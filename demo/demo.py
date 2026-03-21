@@ -601,3 +601,4 @@ with gr.Blocks(title="GraphRAG 真相取证引擎") as demo:
 
 if __name__ == "__main__":
     demo.launch(theme=gr.themes.Soft())
+
