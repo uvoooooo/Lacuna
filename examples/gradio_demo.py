@@ -4,7 +4,6 @@ import time
 import gradio as gr
 import plotly.graph_objects as go
 
-
 # ── Chinese font setup ──────────────────────────────────────────────────────
 
 _CJK_FONT = "PingFang SC, Microsoft YaHei, SimHei, Arial Unicode MS, sans-serif"
@@ -13,27 +12,27 @@ _CJK_FONT = "PingFang SC, Microsoft YaHei, SimHei, Arial Unicode MS, sans-serif"
 # ── Graph layout & palette ──────────────────────────────────────────────────
 
 _POS = {
-    "小王":          (0.0,   0.0),
-    "核心系统":      (1.8,   0.7),
-    "部门经理":      (-1.8,  0.7),
-    "期权":          (-1.8, -0.7),
-    "HR介入":        (-0.6,  1.6),
-    "PIP预警":       (0.6,   1.6),
+    "小王": (0.0, 0.0),
+    "核心系统": (1.8, 0.7),
+    "部门经理": (-1.8, 0.7),
+    "期权": (-1.8, -0.7),
+    "HR介入": (-0.6, 1.6),
+    "PIP预警": (0.6, 1.6),
     "数据泄漏\n(周四)": (1.8, -0.7),
-    "小王叙事":      (-0.7, -1.5),
-    "隐瞒泄密事实":  (0.7,  -1.5),
+    "小王叙事": (-0.7, -1.5),
+    "隐瞒泄密事实": (0.7, -1.5),
     "时间锚点\nT-1(周四)": (0.2, 2.3),
     "时间锚点\nT0(周五)": (-1.0, 2.0),
 }
 
 _NODE_COLOR = {
-    "小王":          "#4FC3F7",
-    "核心系统":      "#81C784",
-    "部门经理":      "#FFB74D",
-    "期权":          "#B0BEC5",
+    "小王": "#4FC3F7",
+    "核心系统": "#81C784",
+    "部门经理": "#FFB74D",
+    "期权": "#B0BEC5",
     "数据泄漏\n(周四)": "#EF5350",
-    "小王叙事":      "#CE93D8",
-    "隐瞒泄密事实":  "#EF9A9A",
+    "小王叙事": "#CE93D8",
+    "隐瞒泄密事实": "#EF9A9A",
     "时间锚点\nT-1(周四)": "#FFF176",
     "时间锚点\nT0(周五)": "#FFD54F",
 }
@@ -45,6 +44,7 @@ _GHOST_EDGE_COLOR = "#E53935"
 
 
 # ── Rendering ───────────────────────────────────────────────────────────────
+
 
 def _render_graph(
     title,
@@ -61,7 +61,6 @@ def _render_graph(
     """
     ghost_nodes = ghost_nodes or []
     ghost_edges = ghost_edges or []
-    all_nodes = solid_nodes + ghost_nodes
 
     fig = go.Figure()
     fig.update_layout(
@@ -192,6 +191,7 @@ def _render_graph(
 
 # ── Graph stages ────────────────────────────────────────────────────────────
 
+
 def graph_initial():
     return _render_graph(
         "阶段一：初步关系图谱 — 基于当事人叙述",
@@ -225,8 +225,13 @@ def graph_cross_domain():
     return _render_graph(
         "阶段三：跨域时序关联 — 引入外部情报",
         solid_nodes=[
-            "小王", "核心系统", "部门经理", "期权", "数据泄漏\n(周四)",
-            "时间锚点\nT-1(周四)", "时间锚点\nT0(周五)",
+            "小王",
+            "核心系统",
+            "部门经理",
+            "期权",
+            "数据泄漏\n(周四)",
+            "时间锚点\nT-1(周四)",
+            "时间锚点\nT0(周五)",
         ],
         solid_edges=[
             ("小王", "核心系统", "服务6年 / 核心研发"),
@@ -249,9 +254,13 @@ def graph_final():
     return _render_graph(
         "阶段四：时序知识图谱 — 最终取证",
         solid_nodes=[
-            "小王", "核心系统", "部门经理",
-            "数据泄漏\n(周四)", "隐瞒泄密事实",
-            "时间锚点\nT-1(周四)", "时间锚点\nT0(周五)",
+            "小王",
+            "核心系统",
+            "部门经理",
+            "数据泄漏\n(周四)",
+            "隐瞒泄密事实",
+            "时间锚点\nT-1(周四)",
+            "时间锚点\nT0(周五)",
         ],
         solid_edges=[
             ("小王", "核心系统", "具备高权限"),
@@ -316,14 +325,27 @@ def _extract_query_keywords(text):
         return ["喜多多集团", "核心系统", "开除", "数据泄漏"]
 
     candidate_terms = [
-        "喜多多集团", "核心系统", "核心研发",
-        "开除", "补偿", "期权", "经理", "HR", "PIP",
-        "数据泄漏", "合规", "审计",
+        "喜多多集团",
+        "核心系统",
+        "核心研发",
+        "开除",
+        "补偿",
+        "期权",
+        "经理",
+        "HR",
+        "PIP",
+        "数据泄漏",
+        "合规",
+        "审计",
     ]
     extracted = [term for term in candidate_terms if term in text]
 
     # 叙事里出现“突然开除 + 核心系统”时，补一个安全主题词提升检索命中
-    if "开除" in text and ("核心系统" in text or "核心研发" in text) and "数据泄漏" not in extracted:
+    if (
+        "开除" in text
+        and ("核心系统" in text or "核心研发" in text)
+        and "数据泄漏" not in extracted
+    ):
         extracted.append("数据泄漏")
 
     if not extracted:
@@ -473,7 +495,9 @@ def analyze_narrative(text):
         yield (
             f"🌐 检索进行中：已抓取 {idx}/{len(retrieved)} 条相关资讯",
             None,
-            gr.update(value=_format_retrieval_markdown(progressive_items, keywords=keywords), visible=True),
+            gr.update(
+                value=_format_retrieval_markdown(progressive_items, keywords=keywords), visible=True
+            ),
             gr.update(value="", visible=False),
             gr.update(visible=False),
         )
@@ -601,4 +625,3 @@ with gr.Blocks(title="GraphRAG 真相取证引擎") as demo:
 
 if __name__ == "__main__":
     demo.launch(theme=gr.themes.Soft())
-
