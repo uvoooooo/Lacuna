@@ -1,0 +1,25 @@
+# Default runtime configuration for the Narrative Audit Pipeline.
+# Load with: narrative_audit.config.load_config("configs/default.toml")
+# Anything omitted falls back to code defaults / environment variables.
+
+[llm]
+# Uses OpenRouter. Env var OPENROUTER_API_KEY controls whether the LLM is used.
+model = "openai/gpt-4o-mini"
+# base_url = "https://openrouter.ai/api/v1"
+
+[evidence]
+# Max retrieved hits considered per checkable claim.
+max_hits = 5
+# Whether to attach a search backend. "none" | "mock"
+backend = "none"
+
+[report]
+# Per-claim confidence priors by checkability level (0..1).
+prior_high = 0.6
+prior_medium = 0.5
+prior_low = 0.4
+prior_none = 0.35
+
+[run]
+language = "zh-CN"
+context = ""

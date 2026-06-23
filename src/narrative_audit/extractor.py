@@ -8,11 +8,11 @@ Goal:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import json
 import os
 import re
-from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from collections.abc import Iterable, Sequence
+from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True)
@@ -40,12 +40,12 @@ class Edge:
 class ExtractionResult:
     """Structured extraction output."""
 
-    nodes: List[Node] = field(default_factory=list)
-    edges: List[Edge] = field(default_factory=list)
-    timeline: List[Dict[str, str]] = field(default_factory=list)
-    metadata: Dict[str, str] = field(default_factory=dict)
+    nodes: list[Node] = field(default_factory=list)
+    edges: list[Edge] = field(default_factory=list)
+    timeline: list[dict[str, str]] = field(default_factory=list)
+    metadata: dict[str, str] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, object]:
+    def to_dict(self) -> dict[str, object]:
         return {
             "nodes": [n.__dict__ for n in self.nodes],
             "edges": [e.__dict__ for e in self.edges],
@@ -63,38 +63,36 @@ class BaseExtractor:
 
 class OpenAITemporalExtractor(BaseExtractor):
     """
-    LLM-based temporal extractor using OpenAI.
+    LLM-based temporal extractor via OpenRouter (OpenAI-compatible API).
 
     Expected env:
-    - OPENAI_API_KEY: required
-    - OPENAI_MODEL: optional, defaults to gpt-4.1-mini
-    - OPENAI_BASE_URL: optional, for proxy/compatible endpoints
+    - OPENROUTER_API_KEY: required
+    - OPENROUTER_MODEL: optional, defaults to openai/gpt-4o-mini
+    - OPENROUTER_BASE_URL: optional, defaults to https://openrouter.ai/api/v1
     """
+
+    _DEFAULT_BASE_URL = "https://openrouter.ai/api/v1"
+    _DEFAULT_MODEL = "openai/gpt-4o-mini"
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        model: Optional[str] = None,
-        base_url: Optional[str] = None,
+        api_key: str | None = None,
+        model: str | None = None,
+        base_url: str | None = None,
     ) -> None:
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY", "")
-        self.model = model or os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
-        self.base_url = base_url or os.getenv("OPENAI_BASE_URL")
+        self.api_key = api_key or os.getenv("OPENROUTER_API_KEY", "")
+        self.model = model or os.getenv("OPENROUTER_MODEL", self._DEFAULT_MODEL)
+        self.base_url = base_url or os.getenv("OPENROUTER_BASE_URL", self._DEFAULT_BASE_URL)
 
         if not self.api_key:
-            raise ValueError("OPENAI_API_KEY is required for OpenAITemporalExtractor")
+            raise ValueError("OPENROUTER_API_KEY is required for OpenAITemporalExtractor")
 
         try:
             from openai import OpenAI  # type: ignore
         except ImportError as exc:  # pragma: no cover
-            raise RuntimeError(
-                "openai package is not installed. Run: pip install openai"
-            ) from exc
+            raise RuntimeError("openai package is not installed. Run: pip install openai") from exc
 
-        kwargs = {"api_key": self.api_key}
-        if self.base_url:
-            kwargs["base_url"] = self.base_url
-        self.client = OpenAI(**kwargs)
+        self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
 
     def extract(self, text: str) -> ExtractionResult:
         clean_text = (text or "").strip()
@@ -124,19 +122,19 @@ class OpenAITemporalExtractor(BaseExtractor):
             f"Text:\n{clean_text}"
         )
 
-        response = self.client.responses.create(
+        response = self.client.chat.completions.create(
             model=self.model,
-            input=[
-                {"role": "system", "content": [{"type": "text", "text": system_prompt}]},
-                {"role": "user", "content": [{"type": "text", "text": user_prompt}]},
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
             ],
         )
-        raw_text = getattr(response, "output_text", "") or ""
+        raw_text = response.choices[0].message.content or ""
         payload = self._safe_parse_json(raw_text)
 
         return self._to_result(payload, clean_text)
 
-    def _safe_parse_json(self, text: str) -> Dict[str, object]:
+    def _safe_parse_json(self, text: str) -> dict[str, object]:
         raw = (text or "").strip()
         if raw.startswith("```"):
             raw = raw.strip("`")
@@ -150,10 +148,10 @@ class OpenAITemporalExtractor(BaseExtractor):
             raise ValueError("OpenAI output is not a JSON object")
         return data
 
-    def _to_result(self, payload: Dict[str, object], source_text: str) -> ExtractionResult:
-        nodes: List[Node] = []
-        edges: List[Edge] = []
-        timeline: List[Dict[str, str]] = []
+    def _to_result(self, payload: dict[str, object], source_text: str) -> ExtractionResult:
+        nodes: list[Node] = []
+        edges: list[Edge] = []
+        timeline: list[dict[str, str]] = []
 
         raw_nodes = payload.get("nodes", [])
         if isinstance(raw_nodes, list):
@@ -238,7 +236,7 @@ class TemporalRuleBasedExtractor(BaseExtractor):
         r"(\d{4}年\d{1,2}月\d{1,2}日|\d{1,2}月\d{1,2}日|\d{1,2}:\d{2}|"
         r"周[一二三四五六日天]|今天|昨天|前天|今晚|当天|次日|随后|T[+-]?\d+)"
     )
-    _RELATION_HINTS: Sequence[Tuple[str, str]] = (
+    _RELATION_HINTS: Sequence[tuple[str, str]] = (
         ("导致", "causes"),
         ("引发", "causes"),
         ("负责", "responsible_for"),
@@ -246,7 +244,7 @@ class TemporalRuleBasedExtractor(BaseExtractor):
         ("汇报", "reports_to"),
         ("发现", "finds"),
     )
-    _STOPWORDS: Set[str] = {
+    _STOPWORDS: set[str] = {
         "我们",
         "你们",
         "他们",
@@ -284,15 +282,15 @@ class TemporalRuleBasedExtractor(BaseExtractor):
             },
         )
 
-    def _split_sentences(self, text: str) -> List[str]:
+    def _split_sentences(self, text: str) -> list[str]:
         parts = [p.strip() for p in self._SENTENCE_SPLIT.split(text)]
         return [p for p in parts if p]
 
-    def _extract_entities(self, sentence: str) -> List[str]:
+    def _extract_entities(self, sentence: str) -> list[str]:
         sentence_no_time = self._TIME_PATTERN.sub(" ", sentence)
         candidates = self._TOKEN_PATTERN.findall(sentence_no_time)
-        uniq: List[str] = []
-        seen: Set[str] = set()
+        uniq: list[str] = []
+        seen: set[str] = set()
         for token in candidates:
             if token in self._STOPWORDS:
                 continue
@@ -301,7 +299,7 @@ class TemporalRuleBasedExtractor(BaseExtractor):
                 uniq.append(token)
         return uniq
 
-    def _extract_time_anchor(self, sentence: str) -> Optional[str]:
+    def _extract_time_anchor(self, sentence: str) -> str | None:
         found = self._TIME_PATTERN.findall(sentence)
         if not found:
             return None
@@ -315,22 +313,20 @@ class TemporalRuleBasedExtractor(BaseExtractor):
 
     def _build_temporal_graph(
         self, sentences: Iterable[str]
-    ) -> Tuple[List[Node], List[Edge], List[Dict[str, str]]]:
-        nodes: Dict[str, Node] = {}
-        edges: Dict[Tuple[str, str, str, int], Edge] = {}
-        timeline: List[Dict[str, str]] = []
+    ) -> tuple[list[Node], list[Edge], list[dict[str, str]]]:
+        nodes: dict[str, Node] = {}
+        edges: dict[tuple[str, str, str, int], Edge] = {}
+        timeline: list[dict[str, str]] = []
 
         current_time = "UNKNOWN"
-        previous_event_id: Optional[str] = None
+        previous_event_id: str | None = None
 
         for idx, sent in enumerate(sentences):
             time_anchor = self._extract_time_anchor(sent)
             if time_anchor:
                 current_time = time_anchor
                 time_node_id = f"time::{time_anchor}"
-                nodes[time_node_id] = Node(
-                    id=time_node_id, label=time_anchor, node_type="time"
-                )
+                nodes[time_node_id] = Node(id=time_node_id, label=time_anchor, node_type="time")
 
             event_id = f"event::{idx + 1}"
             nodes[event_id] = Node(id=event_id, label=sent, node_type="event")
@@ -421,7 +417,7 @@ def extract_graph(text: str, extractor: BaseExtractor | None = None) -> Extracti
     if extractor is not None:
         return extractor.extract(text)
 
-    if os.getenv("OPENAI_API_KEY"):
+    if os.getenv("OPENROUTER_API_KEY"):
         try:
             return OpenAITemporalExtractor().extract(text)
         except Exception:
