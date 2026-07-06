@@ -2,9 +2,13 @@
 
 from .base import BaseAgent
 from .claim_splitter import ClaimSplitterAgent
+from .conflict_detector import ConflictDetectorAgent
 from .evidence import EvidenceAgent, SearchFn
+from .gap_detector import GapDetectorAgent
+from .graph_builder import GraphBuilderAgent
 from .labeler import LabelAgent
 from .missing_context import MissingContextAgent
+from .ontology_reasoner import OntologyReasonerAgent
 from .report import ReportAgent
 
 __all__ = [
@@ -12,6 +16,10 @@ __all__ = [
     "ClaimSplitterAgent",
     "LabelAgent",
     "MissingContextAgent",
+    "GraphBuilderAgent",
+    "OntologyReasonerAgent",
+    "ConflictDetectorAgent",
+    "GapDetectorAgent",
     "EvidenceAgent",
     "SearchFn",
     "ReportAgent",

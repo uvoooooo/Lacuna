@@ -6,15 +6,13 @@ shared-state pipeline rather than a serial chat: each agent enriches the same
 state object, so later agents (and future ones) can read everything produced so
 far.
 
-MVP agents (docs/MVP_items.md):
-    1. ClaimSplitterAgent
-    2. LabelAgent
-    3. MissingContextAgent
-    4. EvidenceAgent
-    5. ReportAgent
+Default agents (docs/architecture.md):
+    Claim track:  ClaimSplitter -> Label -> MissingContext
+    Graph track:  GraphBuilder -> OntologyReasoner -> ConflictDetector -> GapDetector
+    Roll-up:      Evidence -> Report
 
-Later additions (Calibration / Source Credibility / Contradiction / Human
-Review / Domain agents) can be inserted by passing a custom `agents` list.
+Later additions (Calibration / Source Credibility / Human Review / Domain
+agents) can be inserted by passing a custom `agents` list.
 """
 
 from __future__ import annotations
@@ -24,9 +22,13 @@ from collections.abc import Callable, Iterable
 from .agents import (
     BaseAgent,
     ClaimSplitterAgent,
+    ConflictDetectorAgent,
     EvidenceAgent,
+    GapDetectorAgent,
+    GraphBuilderAgent,
     LabelAgent,
     MissingContextAgent,
+    OntologyReasonerAgent,
     ReportAgent,
     SearchFn,
 )
@@ -50,9 +52,17 @@ class NarrativeAuditPipeline:
             self.agents: list[BaseAgent] = list(agents)
         else:
             self.agents = [
+                # Claim track: per-statement audit.
                 ClaimSplitterAgent(self.llm),
                 LabelAgent(self.llm),
                 MissingContextAgent(self.llm),
+                # Graph track: structural audit (narrative -> graph -> ontology
+                # inference -> conflicts -> element gaps).
+                GraphBuilderAgent(self.llm),
+                OntologyReasonerAgent(self.llm),
+                ConflictDetectorAgent(self.llm),
+                GapDetectorAgent(self.llm),
+                # Evidence + roll-up.
                 EvidenceAgent(self.llm, search_fn=search_fn),
                 ReportAgent(self.llm),
             ]

@@ -19,6 +19,10 @@ def test_pipeline_runs_and_produces_report(fake_llm):
         "claim_splitter",
         "label",
         "missing_context",
+        "graph_builder",
+        "ontology_reasoner",
+        "conflict_detector",
+        "gap_detector",
         "evidence",
         "report",
     ]
@@ -31,6 +35,10 @@ def test_log_records_every_agent(fake_llm):
         "claim_splitter",
         "label",
         "missing_context",
+        "graph_builder",
+        "ontology_reasoner",
+        "conflict_detector",
+        "gap_detector",
         "evidence",
         "report",
     }

@@ -12,6 +12,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
+from .graph import Conflict, Gap, NarrativeGraph
+
 # ── Controlled vocabularies ─────────────────────────────────────────────────
 
 
@@ -125,6 +127,9 @@ class AuditState:
     language: str = "zh-CN"
     context: str = ""
     claims: list[Claim] = field(default_factory=list)
+    graph: NarrativeGraph = field(default_factory=NarrativeGraph)
+    conflicts: list[Conflict] = field(default_factory=list)
+    gaps: list[Gap] = field(default_factory=list)
     overall_confidence: float = 0.0
     report_markdown: str = ""
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -142,6 +147,9 @@ class AuditState:
             },
             "overall_confidence": round(self.overall_confidence, 2),
             "segments": [c.to_dict() for c in self.claims],
+            "graph": self.graph.to_dict(),
+            "conflicts": [c.to_dict() for c in self.conflicts],
+            "gaps": [g.to_dict() for g in self.gaps],
             "report_markdown": self.report_markdown,
             "metadata": self.metadata,
             "log": [s.__dict__ for s in self.log],
