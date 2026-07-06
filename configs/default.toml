@@ -7,6 +7,12 @@
 model = "openai/gpt-4o-mini"
 # base_url = "https://openrouter.ai/api/v1"
 
+[ontology]
+# Path to a custom ontology TOML (event types + roles). Omit to use the
+# built-in catalogue shipped at src/narrative_audit/data/ontology.toml —
+# copy that file to start a domain-specific one.
+# path = "configs/my_domain_ontology.toml"
+
 [evidence]
 # Max retrieved hits considered per checkable claim.
 max_hits = 5

@@ -6,6 +6,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), versioning per [
 ## [Unreleased]
 
 ### Added
+- Ontology externalized to TOML: the built-in catalogue now lives in
+  `src/narrative_audit/data/ontology.toml` (packaged with the wheel), and
+  domain-specific ontologies can be loaded from any TOML file via
+  `load_ontology()` or the `[ontology] path` key in the runtime config.
 - src-layout repository scaffolding: `pyproject.toml`, `uv.lock`, `Makefile`,
   `.pre-commit-config.yaml`, GitHub Actions CI (lint + test), `configs/`,
   `examples/`, `scripts/`, `tests/`, expanded `docs/`.
