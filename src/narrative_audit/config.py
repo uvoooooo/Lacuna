@@ -12,7 +12,17 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
-from .agents import ClaimSplitterAgent, EvidenceAgent, LabelAgent, MissingContextAgent, ReportAgent
+from .agents import (
+    ClaimSplitterAgent,
+    ConflictDetectorAgent,
+    EvidenceAgent,
+    GapDetectorAgent,
+    GraphBuilderAgent,
+    LabelAgent,
+    MissingContextAgent,
+    OntologyReasonerAgent,
+    ReportAgent,
+)
 from .llm import LLMClient
 from .pipeline import NarrativeAuditPipeline
 
@@ -52,6 +62,10 @@ def pipeline_from_config(
         ClaimSplitterAgent(llm),
         LabelAgent(llm),
         MissingContextAgent(llm),
+        GraphBuilderAgent(llm),
+        OntologyReasonerAgent(llm),
+        ConflictDetectorAgent(llm),
+        GapDetectorAgent(llm),
         EvidenceAgent(llm, search_fn=search_fn, max_hits=int(evidence_cfg.get("max_hits", 5))),
         ReportAgent(llm),
     ]

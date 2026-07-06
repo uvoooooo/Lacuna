@@ -41,6 +41,69 @@ class FakeLLM:
                 ]
             }
 
+        if "graph-extraction" in system_prompt:
+            text = user_prompt.split("Text:\n", 1)[-1].strip()
+            sentences = [s.strip() for s in re.split(r"[。！？!?;；\n]+", text) if s.strip()]
+            nodes = [
+                {"id": f"e{i + 1}", "label": s, "node_type": "event"}
+                for i, s in enumerate(sentences)
+            ]
+            edges = [
+                {
+                    "source": f"e{i + 1}",
+                    "target": f"e{i + 2}",
+                    "relation": "before",
+                    "timestamp": "UNKNOWN",
+                    "order": i,
+                    "confidence": 0.9,
+                }
+                for i in range(len(sentences) - 1)
+            ]
+            timeline = [
+                {"event_id": f"e{i + 1}", "time": "UNKNOWN", "order": str(i), "text": s}
+                for i, s in enumerate(sentences)
+            ]
+            return {"nodes": nodes, "edges": edges, "timeline": timeline}
+
+        if "ontology reasoner" in system_prompt:
+            blob = user_prompt.split("Events extracted from the narrative:\n", 1)[-1]
+            blob = blob.split("\n\nExisting entity nodes:", 1)[0].strip()
+            try:
+                events = json.loads(blob)
+            except json.JSONDecodeError:
+                events = []
+            out = []
+            for ev in events:
+                if "开除" in ev.get("text", ""):
+                    out.append(
+                        {
+                            "event_id": ev["event_id"],
+                            "event_type": "dismissal",
+                            "filled_roles": [
+                                {
+                                    "role": "employer",
+                                    "filler_label": "部门经理",
+                                    "existing_node_id": None,
+                                    "stated": True,
+                                    "note": "",
+                                },
+                                {
+                                    "role": "prior_employment",
+                                    "filler_label": "在先劳动关系（被开除即蕴含）",
+                                    "existing_node_id": None,
+                                    "stated": False,
+                                    "note": "被开除必然存在在先劳动关系",
+                                },
+                            ],
+                        }
+                    )
+                else:
+                    out.append({"event_id": ev["event_id"], "event_type": None, "filled_roles": []})
+            return {"events": out}
+
+        if "contradiction detector" in system_prompt:
+            return {"conflicts": []}
+
         if "evidence-matching" in system_prompt:
             idxs = re.findall(r"(?m)^\[(\d+)\]", user_prompt)
             return {
