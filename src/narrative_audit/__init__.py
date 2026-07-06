@@ -13,7 +13,16 @@ Quick start:
 """
 
 from .config import load_config, pipeline_from_config
+from .graph import (
+    Conflict,
+    Gap,
+    GraphEdge,
+    GraphNode,
+    NarrativeGraph,
+    NodeStatus,
+)
 from .llm import LLMClient
+from .ontology import DEFAULT_ONTOLOGY, EventType, RoleSpec
 from .pipeline import NarrativeAuditPipeline, audit
 from .state import (
     AuditState,
@@ -35,6 +44,15 @@ __all__ = [
     "Label",
     "Checkability",
     "EvidenceStance",
+    "NarrativeGraph",
+    "GraphNode",
+    "GraphEdge",
+    "NodeStatus",
+    "Conflict",
+    "Gap",
+    "DEFAULT_ONTOLOGY",
+    "EventType",
+    "RoleSpec",
     "LLMClient",
 ]
 

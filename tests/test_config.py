@@ -13,14 +13,16 @@ def test_missing_config_returns_empty_dict():
     assert load_config("configs/does_not_exist.toml") == {}
 
 
-def test_pipeline_from_config_builds_five_agents():
+def test_pipeline_from_config_builds_all_agents():
     pipeline = pipeline_from_config(path="configs/default.toml")
-    assert len(pipeline.agents) == 5
+    assert len(pipeline.agents) == 9
 
 
 def test_pipeline_from_config_mock_backend_enables_search():
+    from narrative_audit.agents import EvidenceAgent
+
     cfg = {"evidence": {"backend": "mock", "max_hits": 3}}
     pipeline = pipeline_from_config(cfg)
-    evidence_agent = pipeline.agents[3]
+    evidence_agent = next(a for a in pipeline.agents if isinstance(a, EvidenceAgent))
     assert evidence_agent.search_fn is not None
     assert evidence_agent.max_hits == 3

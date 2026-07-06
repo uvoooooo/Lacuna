@@ -11,6 +11,7 @@ into the report agent (a dedicated Calibration Agent comes later).
 
 from __future__ import annotations
 
+from ..graph import GapImportance, NodeStatus
 from ..state import AuditState, Checkability, Claim, EvidenceStance, Label
 from .base import BaseAgent
 
@@ -32,8 +33,18 @@ class ReportAgent(BaseAgent):
             claim.confidence = self._score(claim)
 
         state.overall_confidence = self._rollup(state.claims)
+        state.overall_confidence = self._apply_graph_findings(state)
         state.report_markdown = self._render(state)
         return f"总体置信度 {state.overall_confidence:.2f}，已生成报告"
+
+    @staticmethod
+    def _apply_graph_findings(state: AuditState) -> float:
+        """High-severity conflicts and missing required elements lower confidence."""
+        confidence = state.overall_confidence
+        high_conflicts = sum(1 for c in state.conflicts if c.severity == "high")
+        required_gaps = sum(1 for g in state.gaps if g.importance == GapImportance.REQUIRED)
+        penalty = min(0.25, 0.08 * high_conflicts + 0.03 * required_gaps)
+        return max(0.0, confidence - penalty)
 
     @staticmethod
     def _score(claim: Claim) -> float:
@@ -101,7 +112,7 @@ class ReportAgent(BaseAgent):
             all_questions.extend(c.suggested_questions)
 
         lines.append("## 一句话结论")
-        lines.append(self._headline(reliable, refuted, inferences))
+        lines.append(self._headline(state, reliable, refuted, inferences))
         lines.append("")
 
         lines.append("## 逐条拆解")
@@ -123,6 +134,8 @@ class ReportAgent(BaseAgent):
                 lines.append(f"- {c.text}")
             lines.append("")
 
+        lines.extend(self._render_graph_findings(state))
+
         if all_missing:
             lines.append("## 没说的部分（结构性留白）")
             for item in list(dict.fromkeys(all_missing)):
@@ -140,9 +153,50 @@ class ReportAgent(BaseAgent):
         return "\n".join(lines)
 
     @staticmethod
-    def _headline(reliable, refuted, inferences) -> str:
+    def _render_graph_findings(state: AuditState) -> list[str]:
+        lines: list[str] = []
+
+        inferred_nodes = [n for n in state.graph.nodes if n.status == NodeStatus.INFERRED]
+        if inferred_nodes:
+            lines.append("## 本体推理出的隐含节点（原文没明说，但逻辑上必然存在）")
+            for node in inferred_nodes:
+                note = f"——{node.note}" if node.note else ""
+                lines.append(f"- **{node.label}**{note}")
+            lines.append("")
+
+        if state.conflicts:
+            lines.append("## 冲突识别（图上的矛盾）")
+            for conflict in state.conflicts:
+                lines.append(f"- [{conflict.severity}] {conflict.description}")
+            lines.append("")
+
+        required_gaps = [g for g in state.gaps if g.importance == GapImportance.REQUIRED]
+        expected_gaps = [g for g in state.gaps if g.importance != GapImportance.REQUIRED]
+        if required_gaps:
+            lines.append("## 要素空缺：必要要素缺失（空缺本身即信号）")
+            for gap in required_gaps:
+                lines.append(
+                    f"- **{gap.role_zh}**（事件：{gap.event_label}）  \n  {gap.why_suspicious}"
+                )
+            lines.append("")
+        if expected_gaps:
+            lines.append("## 要素空缺：预期要素未交代")
+            for gap in expected_gaps:
+                lines.append(f"- {gap.role_zh}（事件：{gap.event_label}）")
+            lines.append("")
+
+        return lines
+
+    @staticmethod
+    def _headline(state: AuditState, reliable, refuted, inferences) -> str:
+        required_gaps = [g for g in state.gaps if g.importance == GapImportance.REQUIRED]
+        high_conflicts = [c for c in state.conflicts if c.severity == "high"]
         if refuted:
             return "存在被外部证据反驳的陈述，叙事可信度需重点存疑。"
+        if high_conflicts:
+            return "叙述内部存在自相矛盾之处，图谱审计发现高严重度冲突，需重点核查。"
+        if required_gaps:
+            return "叙述系统性缺失了本体上必然存在的关键要素，这个空缺的形状本身值得警惕。"
         if not reliable and inferences:
             return "目前缺乏可核查证据，叙事主要由主观评价与推断构成，建议补充材料后再判断。"
         if reliable:
