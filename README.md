@@ -1,10 +1,10 @@
 # Lacuna · Narrative Audit Pipeline (表述审阅引擎)
 
-把一段叙述（narrative）画成知识图谱，然后审计这张图：**说了什么 / 暗示了什么 / 哪里矛盾 / 哪些必要的位置是空的**——不判断谁对谁错。
+把一段叙述（narrative）画成知识图谱，然后审计这张图：**说了什么 / 暗示了什么 / 哪里矛盾 / 哪些必要的位置是空的**，而不是判断谁对谁错。
 
 主线：叙述 → 知识图谱 → 本体推理（补全不显然的隐含节点）→ 冲突识别（图上的矛盾）→ 要素识别（必要要素空缺，空缺本身即可疑信号）。图谱轨道与逐条 claim 审计轨道并行，共享一份状态，最后汇总成报告。
 
-> 核心理念（见 [`docs/paragraph.md`](docs/paragraph.md)）：不要只听他说了什么，更要注意整幅图里缺了什么——听没说出来的部分。
+> 核心理念：不要只听他说了什么，更要注意整幅图里缺了什么——听没说出来的部分。
 
 ## 快速开始
 
@@ -40,7 +40,7 @@ Input 文本
   ↓  Report                置信度校准 + 汇总两条轨道，生成报告
 ```
 
-详见 [`docs/architecture.md`](docs/architecture.md)，路线图见 [`docs/roadmap.md`](docs/roadmap.md)。
+更细的架构说明与路线图保留在本地 `docs/` 目录（不入远程仓库）。
 
 ## 目录结构
 
@@ -54,7 +54,6 @@ Input 文本
 ├── README.md / CHANGELOG.md
 ├── .github/workflows/        # CI（lint + test）
 ├── configs/                  # 运行时配置（模型/证据/置信度）
-├── docs/                     # 架构、路线图、ADR、调研背景
 ├── examples/                 # 可直接运行的示例 + Gradio 演示
 ├── scripts/                  # 运维/一次性脚本
 ├── src/narrative_audit/      # 主代码包
