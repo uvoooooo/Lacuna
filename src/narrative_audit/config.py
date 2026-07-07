@@ -15,6 +15,7 @@ from typing import Any
 from .agents import (
     ClaimSplitterAgent,
     ConflictDetectorAgent,
+    EntityResolverAgent,
     EvidenceAgent,
     GapDetectorAgent,
     GraphBuilderAgent,
@@ -67,6 +68,7 @@ def pipeline_from_config(
         LabelAgent(llm),
         MissingContextAgent(llm),
         GraphBuilderAgent(llm),
+        EntityResolverAgent(llm),
         OntologyReasonerAgent(llm, ontology=ontology),
         ConflictDetectorAgent(llm),
         GapDetectorAgent(llm, ontology=ontology),

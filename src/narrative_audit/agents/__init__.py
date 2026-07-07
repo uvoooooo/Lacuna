@@ -3,6 +3,7 @@
 from .base import BaseAgent
 from .claim_splitter import ClaimSplitterAgent
 from .conflict_detector import ConflictDetectorAgent
+from .entity_resolver import EntityResolverAgent
 from .evidence import EvidenceAgent, SearchFn
 from .gap_detector import GapDetectorAgent
 from .graph_builder import GraphBuilderAgent
@@ -17,6 +18,7 @@ __all__ = [
     "LabelAgent",
     "MissingContextAgent",
     "GraphBuilderAgent",
+    "EntityResolverAgent",
     "OntologyReasonerAgent",
     "ConflictDetectorAgent",
     "GapDetectorAgent",

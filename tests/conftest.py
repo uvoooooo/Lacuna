@@ -65,6 +65,41 @@ class FakeLLM:
             ]
             return {"nodes": nodes, "edges": edges, "timeline": timeline}
 
+        if "entity-resolution" in system_prompt:
+            blob = user_prompt.split("Entity nodes:\n", 1)[-1]
+            blob = blob.split("\n\nOriginal text:", 1)[0].strip()
+            try:
+                entities = json.loads(blob)
+            except json.JSONDecodeError:
+                entities = []
+            # Canned coreference: merge when one label contains the other,
+            # keeping the node with the more specific (longer) label.
+            merges = []
+            absorbed: set[str] = set()
+            for a in entities:
+                if a["id"] in absorbed:
+                    continue
+                drops = [
+                    b["id"]
+                    for b in entities
+                    if b["id"] != a["id"]
+                    and b["id"] not in absorbed
+                    and b["label"] in a["label"]
+                    and len(b["label"]) < len(a["label"])
+                ]
+                if drops:
+                    absorbed.update(drops)
+                    merges.append(
+                        {
+                            "keep_id": a["id"],
+                            "drop_ids": drops,
+                            "canonical_label": a["label"],
+                            "reason": "same referent, shorter mention",
+                            "confidence": 0.9,
+                        }
+                    )
+            return {"merges": merges}
+
         if "ontology reasoner" in system_prompt:
             blob = user_prompt.split("Events extracted from the narrative:\n", 1)[-1]
             blob = blob.split("\n\nExisting entity nodes:", 1)[0].strip()

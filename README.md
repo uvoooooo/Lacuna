@@ -33,6 +33,7 @@ Input 文本
   │
   ├─ Graph 轨道
   │   ↓  GraphBuilder      叙述 → 知识图谱（实体/事件/时间/关系，标 stated）
+  │   ↓  EntityResolver    实体消解：合并同指实体（部门经理/经理/他 → 同一节点）
   │   ↓  OntologyReasoner  事件对齐本体类型，推理不显然的隐含节点（标 inferred）
   │   ↓  ConflictDetector  图上找矛盾：时间线/互斥关系/属性不一致/语义矛盾
   │   ↓  GapDetector       对照本体查必要要素空缺，关键空缺 = 可疑信号
