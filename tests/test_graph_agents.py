@@ -127,6 +127,60 @@ def test_gap_detector_needs_typed_events():
     assert state.gaps == []
 
 
+def test_gap_detector_suppresses_gaps_addressed_in_text(fake_llm):
+    text = "我在公司工作了六年。上周五我被开除了，理由是绩效不达标，补偿也已经谈妥。"
+    state = _state(text)
+    GraphBuilderAgent(fake_llm).run(state)
+    OntologyReasonerAgent(fake_llm).run(state)
+    GapDetectorAgent(fake_llm).run(state)
+
+    roles = {g.role for g in state.gaps}
+    assert "reason" not in roles, "开除理由 is stated in the text, must not be reported"
+    assert "compensation" not in roles, "补偿 is stated in the text, must not be reported"
+    assert "prior_warning" in roles, "genuinely absent roles must survive verification"
+
+    suppressed = state.metadata["gaps_suppressed"]
+    assert {s["role"] for s in suppressed} == {"reason", "compensation"}
+    for s in suppressed:
+        assert s["quote"] and s["quote"] in text
+    assert "suppressed 2" in state.log[-1].message
+
+
+def test_gap_verification_rejects_hallucinated_quotes():
+    class _LyingLLM:
+        available = True
+        model = "fake"
+
+        def complete_json(self, _system, _user):
+            return {"items": [{"index": 0, "addressed": True, "quote": "原文中不存在的句子"}]}
+
+    state = _state()
+    state.graph.add_node(
+        GraphNode(id="e1", label="被开除", node_type="event", event_type="dismissal")
+    )
+    GapDetectorAgent(_LyingLLM()).run(state)
+
+    # The quote does not appear in the text, so nothing may be suppressed.
+    assert any(g.role == "employer" for g in state.gaps)
+    assert "gaps_suppressed" not in state.metadata
+
+
+def test_gap_verification_unavailable_keeps_all_candidates():
+    class _BrokenLLM:
+        available = True
+        model = "fake"
+
+        def complete_json(self, _system, _user):
+            return None
+
+    state = _state()
+    state.graph.add_node(
+        GraphNode(id="e1", label="被开除", node_type="event", event_type="dismissal")
+    )
+    GapDetectorAgent(_BrokenLLM()).run(state)
+    assert len(state.gaps) == 6, "all dismissal roles unfilled, all must be reported"
+
+
 # ── End to end report ────────────────────────────────────────────────────────
 
 
