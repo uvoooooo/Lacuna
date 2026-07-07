@@ -47,62 +47,6 @@ uv run python -m narrative_audit --context "social media post" "..."
 
 # Full JSON state (claims, graph, conflicts, gaps, evidence, logs)
 uv run python -m narrative_audit --json --demo
-<<<<<<< Updated upstream
-```
-
-启用 LLM：复制 `.env.example` 为 `.env` 并填入 `OPENROUTER_API_KEY`（走 [OpenRouter](https://openrouter.ai)）。
-
-## 流水线
-
-```
-Input 文本
-  │
-  ├─ Claim 轨道
-  │   ↓  ClaimSplitter     把原文拆成原子陈述
-  │   ↓  Label             打标签(事实/主观/推断/情绪化/引用/缺上下文) + 可核查度
-  │   ↓  MissingContext    每条 claim 缺什么 + 该追问什么
-  │
-  ├─ Graph 轨道
-  │   ↓  GraphBuilder      叙述 → 知识图谱（实体/事件/时间/关系，标 stated）
-  │   ↓  OntologyReasoner  事件对齐本体类型，推理不显然的隐含节点（标 inferred）
-  │   ↓  ConflictDetector  图上找矛盾：时间线/互斥关系/属性不一致/语义矛盾
-  │   ↓  GapDetector       对照本体查必要要素空缺，关键空缺 = 可疑信号
-  │
-  ↓  Evidence              只对可核查事实搜证据，判断 支持/反驳/部分/无关/不足
-  ↓  Report                置信度校准 + 汇总两条轨道，生成报告
-```
-
-更细的架构说明与路线图保留在本地 `docs/` 目录（不入远程仓库）。
-
-## 目录结构
-
-```
-.
-├── pyproject.toml            # 项目元数据 + 依赖（uv / hatchling, src 布局）
-├── uv.lock                   # 依赖锁文件
-├── .env.example              # 环境变量模板
-├── .pre-commit-config.yaml   # 提交前钩子 (ruff)
-├── Makefile                  # 常用命令
-├── README.md / CHANGELOG.md
-├── .github/workflows/        # CI（lint + test）
-├── configs/                  # 运行时配置（模型/证据/置信度）
-├── examples/                 # 可直接运行的示例 + Gradio 演示
-├── scripts/                  # 运维/一次性脚本
-├── src/narrative_audit/      # 主代码包
-└── tests/                    # 单元测试
-```
-
-## 开发
-
-```bash
-make lint      # ruff 检查
-make format    # 自动格式化 + 修复
-make test      # pytest
-make demo      # 启动 Gradio 演示 (需 --extra demo)
-```
-
-## 代码调用
-=======
 
 # Graph visualization: solid = stated, dashed = inferred, ghost nodes = gaps
 uv run python -m narrative_audit --mermaid --demo    # paste into mermaid.live
@@ -110,23 +54,12 @@ uv run python -m narrative_audit --dot --demo        # pipe to graphviz: ... | d
 ```
 
 ### Python API
->>>>>>> Stashed changes
 
 ```python
 from narrative_audit import audit
 
 state = audit("我带头研发了核心系统……上周五突然被开除……", context="社媒发帖")
 
-<<<<<<< Updated upstream
-print(state.overall_confidence)
-print(state.report_markdown)
-for node in state.graph.nodes:      # 图谱节点（inferred = 本体推理出来的）
-    print(node.to_dict())
-for conflict in state.conflicts:    # 冲突
-    print(conflict.to_dict())
-for gap in state.gaps:              # 要素空缺
-    print(gap.to_dict())
-=======
 print(state.report_markdown)              # combined report (both tracks)
 print(state.overall_confidence)           # overall confidence 0..1
 
@@ -139,7 +72,6 @@ for node in state.graph.nodes:            # graph nodes (stated / inferred marke
 
 from narrative_audit import to_mermaid    # visualization (or to_dot)
 print(to_mermaid(state.graph, gaps=state.gaps))
->>>>>>> Stashed changes
 ```
 
 ### Plugging in real search

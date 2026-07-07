@@ -22,7 +22,7 @@ from .graph import (
     NodeStatus,
 )
 from .llm import LLMClient
-from .ontology import DEFAULT_ONTOLOGY, EventType, RoleSpec
+from .ontology import DEFAULT_ONTOLOGY, EventType, OntologyError, RoleSpec, load_ontology
 from .pipeline import NarrativeAuditPipeline, audit
 from .state import (
     AuditState,
@@ -32,6 +32,7 @@ from .state import (
     EvidenceStance,
     Label,
 )
+from .viz import to_dot, to_mermaid
 
 __all__ = [
     "NarrativeAuditPipeline",
@@ -53,6 +54,10 @@ __all__ = [
     "DEFAULT_ONTOLOGY",
     "EventType",
     "RoleSpec",
+    "OntologyError",
+    "load_ontology",
+    "to_dot",
+    "to_mermaid",
     "LLMClient",
 ]
 

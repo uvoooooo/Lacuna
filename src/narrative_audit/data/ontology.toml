@@ -1,0 +1,183 @@
+# Default ontology for the Narrative Audit Pipeline (默认本体).
+#
+# This file is the single source of truth for `narrative_audit.ontology.DEFAULT_ONTOLOGY`.
+# To extend or replace it for a domain, copy this file, edit it, and point the
+# runtime config at it:
+#
+#     [ontology]
+#     path = "configs/my_domain_ontology.toml"
+#
+# Schema:
+#   [[generic_roles]]          roles any event is expected to have
+#   [[event_types]]            one table per event type
+#     name       machine name (unique)
+#     label_zh   human label (Chinese)
+#     keywords   offline fallback typing only; LLM typing ignores these
+#     [[event_types.roles]]
+#       name        role machine name
+#       label_zh    role human label
+#       importance  "required" (event cannot have happened without it —
+#                   absence is itself a signal) | "expected" (a full account
+#                   usually covers it — absence is worth asking about)
+#       question    follow-up question when the role is missing
+
+[[generic_roles]]
+name = "cause"
+label_zh = "起因"
+importance = "expected"
+question = "这件事是怎么开始的？"
+
+[[generic_roles]]
+name = "time_place"
+label_zh = "时间地点"
+importance = "expected"
+question = "具体发生在什么时候、什么地方？"
+
+# ── 解雇/开除 ────────────────────────────────────────────────────────────────
+
+[[event_types]]
+name = "dismissal"
+label_zh = "解雇/开除"
+keywords = ["开除", "解雇", "辞退", "劝退", "裁员"]
+
+[[event_types.roles]]
+name = "employer"
+label_zh = "开除方"
+importance = "required"
+question = "是谁做出的开除决定？"
+
+[[event_types.roles]]
+name = "reason"
+label_zh = "开除理由"
+importance = "required"
+question = "对方给出的开除理由是什么？"
+
+[[event_types.roles]]
+name = "prior_employment"
+label_zh = "在先劳动关系"
+importance = "required"
+question = "劳动关系（合同/入职时间）是怎样的？"
+
+[[event_types.roles]]
+name = "compensation"
+label_zh = "补偿处理"
+importance = "expected"
+question = "补偿/赔偿是如何处理的？"
+
+[[event_types.roles]]
+name = "prior_warning"
+label_zh = "事先警告/绩效记录"
+importance = "expected"
+question = "此前是否有警告、绩效沟通或处分记录？"
+
+[[event_types.roles]]
+name = "employee_response"
+label_zh = "当事人回应/申诉"
+importance = "expected"
+question = "当事人是否申诉、仲裁或有其他回应？"
+
+# ── 冲突/争执 ────────────────────────────────────────────────────────────────
+
+[[event_types]]
+name = "dispute"
+label_zh = "冲突/争执"
+keywords = ["冲突", "争执", "吵架", "打架", "对峙", "追逐", "追了"]
+
+[[event_types.roles]]
+name = "counterparty"
+label_zh = "冲突对方"
+importance = "required"
+question = "冲突的另一方是谁？"
+
+[[event_types.roles]]
+name = "cause"
+label_zh = "冲突起因"
+importance = "required"
+question = "冲突是怎么开始的？"
+
+[[event_types.roles]]
+name = "third_party"
+label_zh = "第三方记录"
+importance = "expected"
+question = "有没有报警记录、监控或目击者？"
+
+[[event_types.roles]]
+name = "opposing_view"
+label_zh = "对方视角"
+importance = "expected"
+question = "对方会如何描述同一件事？"
+
+# ── 指控/归责 ────────────────────────────────────────────────────────────────
+
+[[event_types]]
+name = "accusation"
+label_zh = "指控/归责"
+keywords = ["霸占", "压榨", "欺骗", "侵占", "诬陷", "克扣", "违法", "侵权"]
+
+[[event_types.roles]]
+name = "accused"
+label_zh = "被指控方"
+importance = "required"
+question = "指控针对的是谁？"
+
+[[event_types.roles]]
+name = "evidence"
+label_zh = "指控依据"
+importance = "required"
+question = "指控的具体依据是什么？"
+
+[[event_types.roles]]
+name = "accused_response"
+label_zh = "被指控方回应"
+importance = "expected"
+question = "被指控方对此有何回应？"
+
+# ── 损害/受害 ────────────────────────────────────────────────────────────────
+
+[[event_types]]
+name = "harm"
+label_zh = "损害/受害"
+keywords = ["受伤", "损失", "受害", "赔偿", "医院", "事故"]
+
+[[event_types.roles]]
+name = "victim"
+label_zh = "受害方"
+importance = "required"
+question = "受损害的是谁？"
+
+[[event_types.roles]]
+name = "damage_detail"
+label_zh = "损害情况"
+importance = "required"
+question = "具体损失/伤害是什么？有无凭证？"
+
+[[event_types.roles]]
+name = "responsible_party"
+label_zh = "责任方认定"
+importance = "expected"
+question = "责任是如何认定的？由谁认定？"
+
+# ── 承诺/协议 ────────────────────────────────────────────────────────────────
+
+[[event_types]]
+name = "agreement"
+label_zh = "承诺/协议"
+keywords = ["承诺", "协议", "合同", "答应", "约定", "期权"]
+
+[[event_types.roles]]
+name = "parties"
+label_zh = "协议双方"
+importance = "required"
+question = "协议/承诺的双方是谁？"
+
+[[event_types.roles]]
+name = "terms"
+label_zh = "约定内容"
+importance = "required"
+question = "具体约定了什么？有无书面凭证？"
+
+[[event_types.roles]]
+name = "fulfillment"
+label_zh = "履行情况"
+importance = "expected"
+question = "双方各自履行到什么程度？"

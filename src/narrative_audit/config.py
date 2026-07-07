@@ -24,6 +24,7 @@ from .agents import (
     ReportAgent,
 )
 from .llm import LLMClient
+from .ontology import load_ontology
 from .pipeline import NarrativeAuditPipeline
 
 DEFAULT_CONFIG_PATH = "configs/default.toml"
@@ -51,6 +52,9 @@ def pipeline_from_config(
         base_url=llm_cfg.get("base_url"),
     )
 
+    ontology_path = cfg.get("ontology", {}).get("path")
+    ontology = load_ontology(ontology_path) if ontology_path else None
+
     evidence_cfg = cfg.get("evidence", {})
     search_fn = None
     if evidence_cfg.get("backend") == "mock":
@@ -63,9 +67,9 @@ def pipeline_from_config(
         LabelAgent(llm),
         MissingContextAgent(llm),
         GraphBuilderAgent(llm),
-        OntologyReasonerAgent(llm),
+        OntologyReasonerAgent(llm, ontology=ontology),
         ConflictDetectorAgent(llm),
-        GapDetectorAgent(llm),
+        GapDetectorAgent(llm, ontology=ontology),
         EvidenceAgent(llm, search_fn=search_fn, max_hits=int(evidence_cfg.get("max_hits", 5))),
         ReportAgent(llm),
     ]
