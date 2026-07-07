@@ -6,6 +6,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), versioning per [
 ## [Unreleased]
 
 ### Added
+- Gap verification second look: with an LLM available, candidate gaps are
+  batch-checked against the original text and suppressed when the model
+  quotes a verbatim span that addresses the element (quotes are verified to
+  appear in the text, so gaps cannot be dismissed with invented evidence).
+  Suppressions are recorded in `state.metadata["gaps_suppressed"]`. Detection
+  itself stays deterministic; offline behavior is unchanged.
 - Entity resolution agent: after graph building, an LLM proposes which
   entity nodes co-refer (names/titles/pronouns); merges are applied
   deterministically with validation and a confidence floor, merged labels

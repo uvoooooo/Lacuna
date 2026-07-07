@@ -136,6 +136,27 @@ class FakeLLM:
                     out.append({"event_id": ev["event_id"], "event_type": None, "filled_roles": []})
             return {"events": out}
 
+        if "gap-verification" in system_prompt:
+            text = user_prompt.split("Original text:\n", 1)[-1]
+            text = text.split("\n\nCandidate missing elements:", 1)[0].strip()
+            blob = user_prompt.split("Candidate missing elements:\n", 1)[-1]
+            blob = blob.split("\n\nReturn:", 1)[0].strip()
+            try:
+                candidates = json.loads(blob)
+            except json.JSONDecodeError:
+                candidates = []
+            # Canned verification: an element counts as addressed when its
+            # marker keyword appears in the text; quote the clause holding it.
+            keyword_by_element = {"开除理由": "绩效", "补偿处理": "补偿"}
+            items = []
+            for cand in candidates:
+                keyword = keyword_by_element.get(cand.get("element", ""))
+                quote = ""
+                if keyword and keyword in text:
+                    quote = next(c for c in re.split(r"[，。；]", text) if keyword in c)
+                items.append({"index": cand["index"], "addressed": bool(quote), "quote": quote})
+            return {"items": items}
+
         if "contradiction detector" in system_prompt:
             return {"conflicts": []}
 
