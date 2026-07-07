@@ -6,6 +6,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), versioning per [
 ## [Unreleased]
 
 ### Added
+- Graph visualization exports: `to_dot()` / `to_mermaid()` render the
+  narrative graph with stated vs. inferred styling and gaps as ghost
+  "missing" nodes; CLI gains `--dot` and `--mermaid` flags.
 - Ontology externalized to TOML: the built-in catalogue now lives in
   `src/narrative_audit/data/ontology.toml` (packaged with the wheel), and
   domain-specific ontologies can be loaded from any TOML file via

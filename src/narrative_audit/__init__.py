@@ -32,6 +32,7 @@ from .state import (
     EvidenceStance,
     Label,
 )
+from .viz import to_dot, to_mermaid
 
 __all__ = [
     "NarrativeAuditPipeline",
@@ -55,6 +56,8 @@ __all__ = [
     "RoleSpec",
     "OntologyError",
     "load_ontology",
+    "to_dot",
+    "to_mermaid",
     "LLMClient",
 ]
 
