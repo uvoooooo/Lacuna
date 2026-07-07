@@ -6,6 +6,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), versioning per [
 ## [Unreleased]
 
 ### Added
+- Conflict verification second look: rule-flagged time-anchor conflicts are
+  batch-checked by the LLM against the original text, so 周五 vs 上周五 no
+  longer counts as a contradiction; suppression requires an explicit
+  same-time verdict and is logged to `state.metadata["conflicts_suppressed"]`.
+  Timeline cycles and exclusive relations remain purely deterministic.
+- Built-in dismissal ontology gains a `formal_process` role (正规解雇流程:
+  written notice, HR interview, offboarding), so its absence from a dismissal
+  narrative is reported as a gap.
 - Local web app (`web` extra): one input box, one 审阅 button, and the
   shareable card rendered in place with a download button. `make web` or
   `uv run python -m narrative_audit.webapp`, FastAPI + a single embedded
@@ -38,6 +46,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), versioning per [
   `examples/`, `scripts/`, `tests/`, expanded `docs/`.
 
 ### Changed
+- Gradio demo rewritten as a thin shell over the real pipeline (report +
+  share card tabs); the old hardcoded mock (fake search and canned verdict
+  popup) is gone.
 - LLM client now targets OpenRouter (Chat Completions API).
 - All agent prompts rewritten in English.
 - Label agent now **requires** an LLM (removed the hardcoded sentiment/keyword

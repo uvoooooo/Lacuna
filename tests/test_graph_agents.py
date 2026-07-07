@@ -97,6 +97,48 @@ def test_conflict_detector_finds_conflicting_time_anchors():
     assert ConflictKind.ATTRIBUTE in kinds
 
 
+def _time_anchored_state(t1: str, t2: str) -> AuditState:
+    state = _state()
+    state.graph.add_node(GraphNode(id="e1", label="被开除", node_type="event"))
+    state.graph.add_node(GraphNode(id="t1", label=t1, node_type="time"))
+    state.graph.add_node(GraphNode(id="t2", label=t2, node_type="time"))
+    state.graph.add_edge(GraphEdge(source="e1", target="t1", relation="occurs_at"))
+    state.graph.add_edge(GraphEdge(source="e1", target="t2", relation="occurs_at"))
+    return state
+
+
+def test_conflict_verification_suppresses_same_time_anchors(fake_llm):
+    state = _time_anchored_state("周五", "上周五")
+    ConflictDetectorAgent(fake_llm).run(state)
+
+    kinds = {c.kind for c in state.conflicts}
+    assert ConflictKind.ATTRIBUTE not in kinds, "周五 and 上周五 denote the same day"
+    suppressed = state.metadata["conflicts_suppressed"]
+    assert suppressed[0]["times"] == ["上周五", "周五"]
+
+
+def test_conflict_verification_keeps_genuine_mismatch(fake_llm):
+    state = _time_anchored_state("周五", "周一")
+    ConflictDetectorAgent(fake_llm).run(state)
+    kinds = {c.kind for c in state.conflicts}
+    assert ConflictKind.ATTRIBUTE in kinds
+    assert "conflicts_suppressed" not in state.metadata
+
+
+def test_conflict_verification_unavailable_keeps_candidates():
+    class _BrokenLLM:
+        available = True
+        model = "fake"
+
+        def complete_json(self, _system, _user):
+            return None
+
+    state = _time_anchored_state("周五", "上周五")
+    ConflictDetectorAgent(_BrokenLLM()).run(state)
+    kinds = {c.kind for c in state.conflicts}
+    assert ConflictKind.ATTRIBUTE in kinds, "malformed verification must not suppress"
+
+
 def test_conflict_detector_clean_graph_has_no_conflicts(fake_llm):
     state = _state()
     GraphBuilderAgent(fake_llm).run(state)
@@ -178,7 +220,7 @@ def test_gap_verification_unavailable_keeps_all_candidates():
         GraphNode(id="e1", label="被开除", node_type="event", event_type="dismissal")
     )
     GapDetectorAgent(_BrokenLLM()).run(state)
-    assert len(state.gaps) == 6, "all dismissal roles unfilled, all must be reported"
+    assert len(state.gaps) == 7, "all dismissal roles unfilled, all must be reported"
 
 
 # ── End to end report ────────────────────────────────────────────────────────

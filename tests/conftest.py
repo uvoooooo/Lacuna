@@ -157,6 +157,27 @@ class FakeLLM:
                 items.append({"index": cand["index"], "addressed": bool(quote), "quote": quote})
             return {"items": items}
 
+        if "conflict-verification" in system_prompt:
+            blob = user_prompt.split("Candidates (one event, several time anchors):\n", 1)[-1]
+            blob = blob.split("\n\nReturn:", 1)[0].strip()
+            try:
+                candidates = json.loads(blob)
+            except json.JSONDecodeError:
+                candidates = []
+            # Canned equivalence: same time iff one anchor label contains the other.
+            items = []
+            for cand in candidates:
+                times = cand.get("times", [])
+                same = len(times) == 2 and (times[0] in times[1] or times[1] in times[0])
+                items.append(
+                    {
+                        "index": cand["index"],
+                        "same_time": same,
+                        "reason": "指向同一天" if same else "",
+                    }
+                )
+            return {"items": items}
+
         if "contradiction detector" in system_prompt:
             return {"conflicts": []}
 

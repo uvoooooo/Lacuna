@@ -16,9 +16,9 @@
 #     [[event_types.roles]]
 #       name        role machine name
 #       label_zh    role human label
-#       importance  "required" (event cannot have happened without it —
+#       importance  "required" (event cannot have happened without it;
 #                   absence is itself a signal) | "expected" (a full account
-#                   usually covers it — absence is worth asking about)
+#                   usually covers it; absence is worth asking about)
 #       question    follow-up question when the role is missing
 
 [[generic_roles]]
@@ -57,6 +57,12 @@ name = "prior_employment"
 label_zh = "在先劳动关系"
 importance = "required"
 question = "劳动关系（合同/入职时间）是怎样的？"
+
+[[event_types.roles]]
+name = "formal_process"
+label_zh = "正规解雇流程"
+importance = "expected"
+question = "解除劳动合同走了哪些正规流程（书面通知、HR 面谈、离职交接）？"
 
 [[event_types.roles]]
 name = "compensation"

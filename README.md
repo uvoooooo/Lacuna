@@ -26,6 +26,32 @@ An experienced reviewer asks these questions by instinct, but human review is sl
 
 Where it fits: credibility assistance for content platforms, complaint triage for customer service and insurance, narrative checking for due diligence and newsrooms. Any workflow that needs a fast answer to "where does this story not hold up to questioning".
 
+## Demo
+
+Input, a typical one-sided social media post (the built-in `--demo` text):
+
+> 我在喜多多集团勤勤恳恳工作了六年，带头研发了核心系统。上周五，部门经理突然叫我去办公室，跟我说我被开除了，连补偿金都没提。他踢走老员工，霸占我的期权，这是赤裸裸的压榨！
+
+What Lacuna reports (abridged). The dismissal event is aligned to the ontology, and the roles that must exist but never appear become the findings:
+
+| | Missing element | The question worth asking |
+|---|---|---|
+| 1 | 开除理由 `required` | 对方给出的开除理由是什么？ |
+| 2 | 正规解雇流程 `expected` | 解除劳动合同走了哪些正规流程（书面通知、HR 面谈、离职交接）？ |
+| 3 | 事先警告/绩效记录 `expected` | 此前是否有警告、绩效沟通或处分记录？ |
+| 4 | 当事人回应/申诉 `expected` | 当事人是否申诉、仲裁或有其他回应？ |
+
+Two of these absences carry the story. A dismissal at a large tech company necessarily goes through a formal HR process (written notice, an HR interview, offboarding paperwork); the post describes a manager firing someone in his office on the spot, and none of the process around it. And the post accuses the company of outright illegal conduct (dismissal without severance, seized stock options), yet never mentions labor arbitration or any legal step. If the accusation were solid, legal remedy would be the natural next move; its absence is itself a signal.
+
+Alongside the gaps: the subjective span (「他踢走老员工，霸占我的期权，这是赤裸裸的压榨！」) is highlighted as opinion/emotional rather than fact, and the prior employment relation is added as an `inferred` node (being fired entails it, even though the post never states it). No verdict on who is right: just the structure of what was said, what was implied, and what was left out.
+
+Reproduce it:
+
+```bash
+uv run python -m narrative_audit --demo                    # terminal report
+uv run python -m narrative_audit --card demo.html --demo   # shareable card
+```
+
 ## Quick start
 
 Requires [uv](https://docs.astral.sh/uv/) and an [OpenRouter](https://openrouter.ai) API key (the Label stage needs an LLM; the other stages fall back to deterministic logic without a key).

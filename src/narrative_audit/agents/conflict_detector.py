@@ -1,5 +1,5 @@
 """
-Agent — Conflict Detector (冲突识别).
+Agent: Conflict Detector (冲突识别).
 
 Finds contradictions on the narrative graph:
 
@@ -11,6 +11,15 @@ Finds contradictions on the narrative graph:
 
 The first three checks are deterministic graph checks; only the semantic
 check uses the LLM.
+
+Attribute candidates get a second look when an LLM is available: the rule
+compares time anchors by string identity, so 周五 vs 上周五 would be reported
+as a contradiction even though they can denote the same day. The LLM
+batch-checks the flagged anchor sets against the original text and a
+candidate is suppressed only on an explicit same-time verdict; anything
+malformed or uncertain keeps the conflict. Suppressions are recorded in
+`state.metadata["conflicts_suppressed"]`. Timeline cycles and exclusive
+relations are pure graph math and are never suppressible.
 """
 
 from __future__ import annotations
@@ -27,6 +36,24 @@ _EXCLUSIVE_PAIRS: tuple[tuple[str, str], ...] = (
     ("supports", "opposes"),
     ("hires", "dismisses"),
     ("owns", "stole_from"),
+)
+
+_VERIFY_SYSTEM = (
+    "You are a conflict-verification engine for narrative auditing. A rule "
+    "flagged events that are anchored to multiple different time expressions. "
+    "Decide for each candidate whether the expressions can denote the same "
+    "moment (no real conflict) or are genuinely incompatible. Respond with "
+    "JSON only."
+)
+_VERIFY_USER_TMPL = (
+    "Original text:\n{text}\n\n"
+    "Candidates (one event, several time anchors):\n{candidates}\n\n"
+    'Return: {{"items": [{{"index": int, "same_time": bool, "reason": str}}]}}\n'
+    "Rules:\n"
+    "- same_time=true ONLY when the expressions clearly denote the same "
+    "moment in this narrative (e.g. 周五 and 上周五 both pointing at last "
+    "Friday).\n"
+    "- When unsure, same_time=false. No markdown fences."
 )
 
 _SYSTEM = (
@@ -55,11 +82,18 @@ class ConflictDetectorAgent(BaseAgent):
 
         self._check_timeline(state)
         self._check_exclusive_relations(state)
-        self._check_time_attributes(state)
+        candidates = self._time_attribute_candidates(state)
+        suppressed = 0
+        if candidates and self.uses_llm:
+            candidates, suppressed = self._verify_attributes(state, candidates)
+        state.conflicts.extend(conflict for conflict, _ in candidates)
         semantic = self._check_semantic(state) if self.uses_llm else False
 
         mode = "graph+llm" if semantic else "graph"
-        return f"found {len(state.conflicts)} conflicts ({mode})"
+        message = f"found {len(state.conflicts)} conflicts ({mode})"
+        if suppressed:
+            message += f", suppressed {suppressed} same-time anchors"
+        return message
 
     # ── Deterministic graph checks ──────────────────────────────────────────
 
@@ -122,25 +156,73 @@ class ConflictDetectorAgent(BaseAgent):
                         )
                     )
 
-    def _check_time_attributes(self, state: AuditState) -> None:
+    def _time_attribute_candidates(self, state: AuditState) -> list[tuple[Conflict, list[str]]]:
+        """Rule-proposed attribute conflicts, paired with their anchor labels."""
         anchors: dict[str, set[str]] = {}
         for e in state.graph.edges:
             if e.relation == "occurs_at":
                 anchors.setdefault(e.source, set()).add(e.target)
 
+        candidates: list[tuple[Conflict, list[str]]] = []
         for event_id, times in anchors.items():
             if len(times) > 1:
-                state.conflicts.append(
-                    Conflict(
-                        kind=ConflictKind.ATTRIBUTE,
-                        involved=[self._label(state.graph, event_id)],
-                        description=(
-                            f"同一事件被锚定到多个时间：「{self._label(state.graph, event_id)}」"
-                            f"({', '.join(sorted(self._label(state.graph, t) for t in times))})。"
+                labels = sorted(self._label(state.graph, t) for t in times)
+                candidates.append(
+                    (
+                        Conflict(
+                            kind=ConflictKind.ATTRIBUTE,
+                            involved=[self._label(state.graph, event_id)],
+                            description=(
+                                f"同一事件被锚定到多个时间："
+                                f"「{self._label(state.graph, event_id)}」({', '.join(labels)})。"
+                            ),
+                            severity="medium",
                         ),
-                        severity="medium",
+                        labels,
                     )
                 )
+        return candidates
+
+    def _verify_attributes(
+        self, state: AuditState, candidates: list[tuple[Conflict, list[str]]]
+    ) -> tuple[list[tuple[Conflict, list[str]]], int]:
+        """LLM second look: drop candidates whose anchors denote the same time."""
+        blob = json.dumps(
+            [
+                {"index": i, "event": conflict.involved[0], "times": labels}
+                for i, (conflict, labels) in enumerate(candidates)
+            ],
+            ensure_ascii=False,
+        )
+        payload = self.llm.complete_json(
+            _VERIFY_SYSTEM, _VERIFY_USER_TMPL.format(text=state.text, candidates=blob)
+        )
+        if not payload or not isinstance(payload.get("items"), list):
+            return candidates, 0  # verification unavailable: keep everything
+
+        same_time: dict[int, str] = {}
+        for item in payload["items"]:
+            if not isinstance(item, dict) or item.get("same_time") is not True:
+                continue
+            try:
+                index = int(item.get("index", -1))
+            except (TypeError, ValueError):
+                continue
+            same_time[index] = str(item.get("reason", "")).strip()
+
+        kept: list[tuple[Conflict, list[str]]] = []
+        for i, (conflict, labels) in enumerate(candidates):
+            if i in same_time:
+                state.metadata.setdefault("conflicts_suppressed", []).append(
+                    {
+                        "event": conflict.involved[0],
+                        "times": labels,
+                        "reason": same_time[i],
+                    }
+                )
+            else:
+                kept.append((conflict, labels))
+        return kept, len(candidates) - len(kept)
 
     # ── LLM semantic check ──────────────────────────────────────────────────
 
