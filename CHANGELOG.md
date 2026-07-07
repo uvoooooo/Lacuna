@@ -6,6 +6,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), versioning per [
 ## [Unreleased]
 
 ### Added
+- Local web app (`web` extra): one input box, one 审阅 button, and the
+  shareable card rendered in place with a download button. `make web` or
+  `uv run python -m narrative_audit.webapp`, FastAPI + a single embedded
+  page, no static assets.
+- Shareable audit card: `to_share_card(state)` renders the audit as one
+  standalone, screenshot-ready HTML page (highlighted subjective spans,
+  "N things this story doesn't tell you" as ghost boxes, conflicts, implied
+  nodes, confidence bar); CLI gains `--card [PATH]`.
 - Gap verification second look: with an LLM available, candidate gaps are
   batch-checked against the original text and suppressed when the model
   quotes a verbatim span that addresses the element (quotes are verified to

@@ -648,21 +648,31 @@ demo = [
     { name = "plotly" },
 ]
 dev = [
+    { name = "fastapi" },
+    { name = "httpx" },
     { name = "pre-commit" },
     { name = "pytest" },
     { name = "ruff" },
 ]
+web = [
+    { name = "fastapi" },
+    { name = "uvicorn" },
+]
 
 [package.metadata]
 requires-dist = [
+    { name = "fastapi", marker = "extra == 'dev'", specifier = ">=0.110" },
+    { name = "fastapi", marker = "extra == 'web'", specifier = ">=0.110" },
     { name = "gradio", marker = "extra == 'demo'" },
+    { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27" },
     { name = "openai", specifier = ">=1.0" },
     { name = "plotly", marker = "extra == 'demo'" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.7" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6" },
+    { name = "uvicorn", marker = "extra == 'web'", specifier = ">=0.29" },
 ]
-provides-extras = ["demo", "dev"]
+provides-extras = ["demo", "dev", "web"]
 
 [[package]]
 name = "narwhals"

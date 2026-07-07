@@ -44,6 +44,14 @@ def main(argv=None) -> int:
     parser.add_argument("--demo", action="store_true", help="运行内置示例")
     parser.add_argument("--dot", action="store_true", help="输出图谱的 Graphviz DOT 而非报告")
     parser.add_argument("--mermaid", action="store_true", help="输出图谱的 Mermaid 而非报告")
+    parser.add_argument(
+        "--card",
+        nargs="?",
+        const="lacuna_card.html",
+        default=None,
+        metavar="PATH",
+        help="生成可分享的 HTML 审计卡片（默认 lacuna_card.html）",
+    )
     args = parser.parse_args(argv)
 
     text = _read_input(args)
@@ -61,7 +69,7 @@ def main(argv=None) -> int:
         )
         return 2
 
-    machine_output = args.json or args.dot or args.mermaid
+    machine_output = args.json or args.dot or args.mermaid or args.card is not None
     if not machine_output:
         print("=" * 60)
         print(f"LLM: on (model={pipeline.llm.model})")
@@ -73,7 +81,15 @@ def main(argv=None) -> int:
 
     state = pipeline.run(text, context=args.context, on_progress=_progress)
 
-    if args.dot:
+    if args.card is not None:
+        from pathlib import Path
+
+        from .card import to_share_card
+
+        out = Path(args.card)
+        out.write_text(to_share_card(state), encoding="utf-8")
+        print(out.resolve())
+    elif args.dot:
         from .viz import to_dot
 
         print(to_dot(state.graph, gaps=state.gaps))

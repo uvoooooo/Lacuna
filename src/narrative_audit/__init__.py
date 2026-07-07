@@ -12,6 +12,7 @@ Quick start:
     print(state.report_markdown)
 """
 
+from .card import to_share_card
 from .config import load_config, pipeline_from_config
 from .graph import (
     Conflict,
@@ -58,6 +59,7 @@ __all__ = [
     "load_ontology",
     "to_dot",
     "to_mermaid",
+    "to_share_card",
     "LLMClient",
 ]
 
