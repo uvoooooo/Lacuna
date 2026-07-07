@@ -14,6 +14,8 @@ import json
 import os
 from typing import Any
 
+from .env import load_dotenv
+
 DEFAULT_BASE_URL = "https://openrouter.ai/api/v1"
 DEFAULT_MODEL = "openai/gpt-4o-mini"
 
@@ -27,6 +29,8 @@ class LLMClient:
         model: str | None = None,
         base_url: str | None = None,
     ) -> None:
+        if api_key is None:
+            load_dotenv()
         self.api_key = api_key or os.getenv("OPENROUTER_API_KEY", "")
         self.model = model or os.getenv("OPENROUTER_MODEL", DEFAULT_MODEL)
         self.base_url = base_url or os.getenv("OPENROUTER_BASE_URL", DEFAULT_BASE_URL)
