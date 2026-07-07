@@ -55,6 +55,7 @@ class GraphNode:
     status: str = NodeStatus.STATED
     event_type: str = ""  # ontology event type, filled by the reasoner
     note: str = ""  # e.g. why an inferred node must exist
+    aliases: list[str] = field(default_factory=list)  # labels merged in by entity resolution
 
     def to_dict(self) -> dict[str, Any]:
         return dict(self.__dict__)
@@ -127,6 +128,43 @@ class NarrativeGraph:
 
     def events(self) -> list[GraphNode]:
         return [n for n in self.nodes if n.node_type == "event"]
+
+    def merge_nodes(self, keep_id: str, drop_id: str) -> bool:
+        """
+        Merge `drop_id` into `keep_id`: rewrite all edges and timeline entries
+        to point at the kept node, record the dropped label as an alias, and
+        remove the dropped node. Self-loops and duplicate edges created by the
+        rewrite are discarded. Returns False if either id is missing or equal.
+        """
+        keep = self.get_node(keep_id)
+        drop = self.get_node(drop_id)
+        if keep is None or drop is None or keep_id == drop_id:
+            return False
+
+        rewired: list[GraphEdge] = []
+        for edge in self.edges:
+            source = keep_id if edge.source == drop_id else edge.source
+            target = keep_id if edge.target == drop_id else edge.target
+            if source == target:
+                continue
+            if any(
+                e.source == source and e.target == target and e.relation == edge.relation
+                for e in rewired
+            ):
+                continue
+            edge.source, edge.target = source, target
+            rewired.append(edge)
+        self.edges = rewired
+
+        for entry in self.timeline:
+            if entry.get("event_id") == drop_id:
+                entry["event_id"] = keep_id
+
+        for label in (drop.label, *drop.aliases):
+            if label and label != keep.label and label not in keep.aliases:
+                keep.aliases.append(label)
+        self.nodes.remove(drop)
+        return True
 
     def edges_from(self, node_id: str) -> list[GraphEdge]:
         return [e for e in self.edges if e.source == node_id]

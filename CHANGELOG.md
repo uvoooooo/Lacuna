@@ -6,6 +6,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), versioning per [
 ## [Unreleased]
 
 ### Added
+- Entity resolution agent: after graph building, an LLM proposes which
+  entity nodes co-refer (names/titles/pronouns); merges are applied
+  deterministically with validation and a confidence floor, merged labels
+  survive as node `aliases`, and the merge log is recorded in
+  `state.metadata["entity_merges"]`. Offline fallback merges exact duplicate
+  labels only.
 - Graph visualization exports: `to_dot()` / `to_mermaid()` render the
   narrative graph with stated vs. inferred styling and gaps as ghost
   "missing" nodes; CLI gains `--dot` and `--mermaid` flags.

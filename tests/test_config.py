@@ -15,7 +15,7 @@ def test_missing_config_returns_empty_dict():
 
 def test_pipeline_from_config_builds_all_agents():
     pipeline = pipeline_from_config(path="configs/default.toml")
-    assert len(pipeline.agents) == 9
+    assert len(pipeline.agents) == 10
 
 
 def test_pipeline_from_config_mock_backend_enables_search():

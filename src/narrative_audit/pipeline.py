@@ -8,7 +8,8 @@ far.
 
 Default agents (docs/architecture.md):
     Claim track:  ClaimSplitter -> Label -> MissingContext
-    Graph track:  GraphBuilder -> OntologyReasoner -> ConflictDetector -> GapDetector
+    Graph track:  GraphBuilder -> EntityResolver -> OntologyReasoner
+                  -> ConflictDetector -> GapDetector
     Roll-up:      Evidence -> Report
 
 Later additions (Calibration / Source Credibility / Human Review / Domain
@@ -23,6 +24,7 @@ from .agents import (
     BaseAgent,
     ClaimSplitterAgent,
     ConflictDetectorAgent,
+    EntityResolverAgent,
     EvidenceAgent,
     GapDetectorAgent,
     GraphBuilderAgent,
@@ -59,6 +61,7 @@ class NarrativeAuditPipeline:
                 # Graph track: structural audit (narrative -> graph -> ontology
                 # inference -> conflicts -> element gaps).
                 GraphBuilderAgent(self.llm),
+                EntityResolverAgent(self.llm),
                 OntologyReasonerAgent(self.llm),
                 ConflictDetectorAgent(self.llm),
                 GapDetectorAgent(self.llm),
