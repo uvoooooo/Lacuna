@@ -42,6 +42,8 @@ def main(argv=None) -> int:
     parser.add_argument("--context", default="", help="输入语境，如 社媒发帖/客服投诉/新闻稿")
     parser.add_argument("--json", action="store_true", help="输出完整 JSON 状态而非报告")
     parser.add_argument("--demo", action="store_true", help="运行内置示例")
+    parser.add_argument("--dot", action="store_true", help="输出图谱的 Graphviz DOT 而非报告")
+    parser.add_argument("--mermaid", action="store_true", help="输出图谱的 Mermaid 而非报告")
     args = parser.parse_args(argv)
 
     text = _read_input(args)
@@ -59,18 +61,27 @@ def main(argv=None) -> int:
         )
         return 2
 
-    if not args.json:
+    machine_output = args.json or args.dot or args.mermaid
+    if not machine_output:
         print("=" * 60)
         print(f"LLM: on (model={pipeline.llm.model})")
         print("=" * 60)
 
     def _progress(agent: str, message: str) -> None:
-        if not args.json:
+        if not machine_output:
             print(f"  [{agent}] {message}", file=sys.stderr)
 
     state = pipeline.run(text, context=args.context, on_progress=_progress)
 
-    if args.json:
+    if args.dot:
+        from .viz import to_dot
+
+        print(to_dot(state.graph, gaps=state.gaps))
+    elif args.mermaid:
+        from .viz import to_mermaid
+
+        print(to_mermaid(state.graph, gaps=state.gaps))
+    elif args.json:
         print(json.dumps(state.to_dict(), ensure_ascii=False, indent=2))
     else:
         print()

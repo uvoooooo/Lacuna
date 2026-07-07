@@ -10,8 +10,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
-
+from typing import Any
 
 # ── Controlled vocabularies ─────────────────────────────────────────────────
 
@@ -67,7 +66,7 @@ class Evidence:
     credibility: float = 0.5   # source trustworthiness, 0..1
     freshness: float = 0.5     # time relevance, 0..1
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return dict(self.__dict__)
 
 
@@ -77,13 +76,13 @@ class Claim:
 
     id: str
     text: str
-    labels: List[str] = field(default_factory=list)
+    labels: list[str] = field(default_factory=list)
     checkability: str = Checkability.MEDIUM
     evidence_status: str = EvidenceStance.NOT_ENOUGH
     confidence: float = 0.5
-    missing_context: List[str] = field(default_factory=list)
-    suggested_questions: List[str] = field(default_factory=list)
-    evidence: List[Evidence] = field(default_factory=list)
+    missing_context: list[str] = field(default_factory=list)
+    suggested_questions: list[str] = field(default_factory=list)
+    evidence: list[Evidence] = field(default_factory=list)
 
     def has_label(self, label: str) -> bool:
         return label in self.labels
@@ -92,12 +91,12 @@ class Claim:
     def is_checkable(self) -> bool:
         return self.checkability in (Checkability.HIGH, Checkability.MEDIUM)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "claim": self.text,
             "labels": list(self.labels),
-            "labels_zh": [Label.ZH.get(l, l) for l in self.labels],
+            "labels_zh": [Label.ZH.get(lbl, lbl) for lbl in self.labels],
             "checkability": self.checkability,
             "evidence_status": self.evidence_status,
             "confidence": round(self.confidence, 2),
@@ -123,16 +122,16 @@ class AuditState:
     text: str
     language: str = "zh-CN"
     context: str = ""
-    claims: List[Claim] = field(default_factory=list)
+    claims: list[Claim] = field(default_factory=list)
     overall_confidence: float = 0.0
     report_markdown: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    log: List[StepLog] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
+    log: list[StepLog] = field(default_factory=list)
 
     def add_log(self, agent: str, message: str, elapsed_ms: int = 0) -> None:
         self.log.append(StepLog(agent=agent, message=message, elapsed_ms=elapsed_ms))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "input": {
                 "text": self.text,

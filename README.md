@@ -16,6 +16,7 @@ make run                     # 运行内置示例
 # 或：
 uv run python -m narrative_audit "上周五我被开除了，连补偿都没有。"
 uv run python -m narrative_audit --json --demo
+uv run python -m narrative_audit --mermaid --demo   # 图谱可视化（--dot 同理）
 ```
 
 启用 LLM：复制 `.env.example` 为 `.env` 并填入 `OPENROUTER_API_KEY`（走 [OpenRouter](https://openrouter.ai)）。
@@ -87,6 +88,10 @@ for conflict in state.conflicts:    # 冲突
     print(conflict.to_dict())
 for gap in state.gaps:              # 要素空缺
     print(gap.to_dict())
+
+from narrative_audit import to_mermaid
+print(to_mermaid(state.graph, gaps=state.gaps))   # 或 to_dot(...)
+# 实线 = 明说的，虚线 = 推理出来的，幽灵节点 = 该有但没说的
 ```
 
 接真实检索：`search_fn` 只是 `Callable[[str], list[dict]]`，返回 `[{"snippet","source","url"}, ...]` 即可。
