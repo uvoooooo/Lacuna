@@ -36,6 +36,15 @@ cp .env.example .env                         # 2. fill in OPENROUTER_API_KEY
 make run                                     # 3. run the built-in example
 ```
 
+### Local web app
+
+The zero-friction way: paste text, click once, get the shareable card.
+
+```bash
+uv sync --extra web
+make web        # opens on http://127.0.0.1:8000
+```
+
 ### Command line
 
 ```bash
@@ -51,6 +60,9 @@ uv run python -m narrative_audit --json --demo
 # Graph visualization: solid = stated, dashed = inferred, ghost nodes = gaps
 uv run python -m narrative_audit --mermaid --demo    # paste into mermaid.live
 uv run python -m narrative_audit --dot --demo        # pipe to graphviz: ... | dot -Tsvg
+
+# Shareable audit card: one standalone HTML page, screenshot-ready
+uv run python -m narrative_audit --card audit.html --demo
 ```
 
 ### Python API
@@ -72,6 +84,9 @@ for node in state.graph.nodes:            # graph nodes (stated / inferred marke
 
 from narrative_audit import to_mermaid    # visualization (or to_dot)
 print(to_mermaid(state.graph, gaps=state.gaps))
+
+from narrative_audit import to_share_card  # shareable HTML card
+open("audit.html", "w").write(to_share_card(state))
 ```
 
 ### Plugging in real search

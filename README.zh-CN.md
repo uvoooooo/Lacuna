@@ -36,6 +36,15 @@ cp .env.example .env                         # 2. 填入 OPENROUTER_API_KEY
 make run                                     # 3. 跑内置示例
 ```
 
+### 本地网页版
+
+零门槛用法：粘贴文本，点一下，直接出可分享的审计卡片。
+
+```bash
+uv sync --extra web
+make web        # 打开 http://127.0.0.1:8000
+```
+
 ### 命令行
 
 ```bash
@@ -51,6 +60,9 @@ uv run python -m narrative_audit --json --demo
 # 图谱可视化：实线=明说的，虚线=推理出来的，幽灵节点=该说没说的
 uv run python -m narrative_audit --mermaid --demo    # 粘到 mermaid.live 即可看图
 uv run python -m narrative_audit --dot --demo        # 喂给 graphviz: ... | dot -Tsvg
+
+# 可分享审计卡片：一张独立 HTML 页面，截图即可转发
+uv run python -m narrative_audit --card audit.html --demo
 ```
 
 ### Python API
@@ -72,6 +84,9 @@ for node in state.graph.nodes:            # 图谱节点（stated / inferred 分
 
 from narrative_audit import to_mermaid    # 可视化（或 to_dot）
 print(to_mermaid(state.graph, gaps=state.gaps))
+
+from narrative_audit import to_share_card  # 可分享 HTML 卡片
+open("audit.html", "w").write(to_share_card(state))
 ```
 
 ### 接真实检索
